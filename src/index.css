@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+
+  /* Ethereal Obsidian Palette */
+  --color-obsidian-900: #010409;
+  --color-obsidian-800: #0d1117;
+  --color-aurora-violet: #a855f7;
+  --color-aurora-cyan: #22d3ee;
+  --color-aurora-emerald: #10b981;
+  --color-aurora-rose: #f43f5e;
+
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2.5rem;
+
+  --animate-aurora: aurora 20s linear infinite;
+}
+
+@keyframes aurora {
+  from { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  to { transform: rotate(360deg) scale(1); }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased transition-colors duration-500 min-h-screen relative overflow-x-hidden;
+  }
+
+  .dark body {
+    @apply bg-obsidian-900 text-slate-100;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    @apply tracking-tight font-bold;
+  }
+}
+
+@layer components {
+  /* Next-Gen Glassmorphism */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] transition-all duration-500;
+  }
+
+  .dark .glass-card {
+    @apply bg-obsidian-800/40 border-white/5 shadow-none backdrop-blur-2xl;
+  }
+
+  /* Shine Effect */
+  .glass-shine {
+    @apply relative overflow-hidden;
+  }
+  
+  .glass-shine::before {
+    content: '';
+    @apply absolute -top-[50%] -left-[50%] w-[200%] h-[200%] bg-[conic-gradient(from_0deg,transparent,rgba(255,255,255,0.1),transparent)] opacity-0 transition-opacity duration-700 pointer-events-none;
+  }
+  
+  .glass-shine:hover::before {
+    @apply opacity-100 animate-[spin_4s_linear_infinite];
+  }
+
+  .btn-hover {
+    @apply transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] hover:shadow-lg;
+  }
+
+  /* Nebula Mesh Background Utilities */
+  .nebula-bg {
+    @apply fixed inset-0 -z-10 overflow-hidden pointer-events-none;
+    background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
+  }
+
+  .nebula-blob {
+    @apply absolute rounded-full blur-[140px] opacity-30 mix-blend-multiply animate-aurora dark:mix-blend-screen dark:opacity-25;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+/* Custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 border-4 border-transparent bg-clip-padding rounded-full hover:bg-slate-300 transition-colors;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-slate-800 hover:bg-slate-700;
+}

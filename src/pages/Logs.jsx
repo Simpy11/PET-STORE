@@ -1,3 +1,4 @@
+import { dataErrorMessage } from '../services/config';
 import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,12 +37,12 @@ export default function Logs() {
       setDataError('');
       setLogs(updatedLogs);
       setLoading(false);
-    }, activeFilter === 'System' ? null : activeFilter, () => { setDataError('Could not load activity logs.'); setLoading(false); });
+    }, activeFilter === 'System' ? null : activeFilter, error => { setDataError(dataErrorMessage(error)); setLoading(false); });
 
     return () => unsubscribe();
   }, [activeFilter]);
 
-  const filteredLogs = logs.filter(log => 
+  const filteredLogs = logs.filter(log =>
     log.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.actionType.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.user.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,8 +108,8 @@ export default function Logs() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => { setActiveFilter(f.name); setCurrentPage(1); }}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${
-                  activeFilter === f.name 
-                    ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20' 
+                  activeFilter === f.name
+                    ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20'
                     : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-800 hover:bg-slate-50'
                 }`}
               >

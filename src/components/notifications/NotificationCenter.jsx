@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Bell, BellOff, Check, Trash2, ExternalLink, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,7 +17,7 @@ const timeSince = (date) => {
   return Math.floor(seconds) + " seconds ago";
 };
 
-export default function NotificationCenter({ notifications, onClose, onMarkAsRead, onClearAll }) {
+export default function NotificationCenter({ notifications, onClose, onMarkAsRead, onClearAll, error }) {
   const navigate = useNavigate();
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -40,7 +41,7 @@ export default function NotificationCenter({ notifications, onClose, onMarkAsRea
       </div>
 
       <div className="max-h-[400px] overflow-y-auto">
-        {notifications.length === 0 ? (
+        {error ? <p role="alert" className="p-6 text-sm text-rose-600 dark:text-rose-400">{error}</p> : notifications.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center opacity-30">
             <BellOff className="h-8 w-8 mb-3" />
             <p className="text-[10px] font-bold uppercase tracking-widest">Clear Signal</p>
@@ -48,7 +49,7 @@ export default function NotificationCenter({ notifications, onClose, onMarkAsRea
         ) : (
           <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
             {notifications.slice(0, 10).map((n) => (
-              <div 
+              <div
                 key={n.id}
                 className={`p-5 flex gap-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${!n.read ? 'bg-brand-500/[0.03]' : ''}`}
               >
@@ -63,7 +64,7 @@ export default function NotificationCenter({ notifications, onClose, onMarkAsRea
                     </span>
                     <div className="flex items-center gap-2">
                        {!n.read && (
-                         <button 
+                         <button
                            onClick={() => onMarkAsRead(n.id)}
                            className="p-1 px-2 bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-lg text-[9px] font-black uppercase tracking-widest"
                          >
@@ -71,7 +72,7 @@ export default function NotificationCenter({ notifications, onClose, onMarkAsRea
                          </button>
                        )}
                        {n.actionPath && (
-                         <button 
+                         <button
                            onClick={() => { navigate(n.actionPath); onClose(); }}
                            className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg"
                          >
@@ -89,7 +90,7 @@ export default function NotificationCenter({ notifications, onClose, onMarkAsRea
 
       {notifications.length > 0 && (
         <div className="p-4 bg-slate-50/50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800">
-           <button 
+           <button
              onClick={onClearAll}
              className="w-full py-2.5 flex items-center justify-center gap-2 text-[10px] font-black text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-widest"
            >

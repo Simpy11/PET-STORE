@@ -1,23 +1,22 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
   serverTimestamp,
   query,
   orderBy,
-  onSnapshot,
   increment
-} from "firebase/firestore"; 
-import { db } from "./firebase";
+} from "firebase/firestore";
+import { requireDb } from "./firebase";
+import { onSnapshot, getDocs } from "./firestoreAccess";
 import { normalizeProduct, validateProduct } from "./normalize";
 import { addActivityLog } from "./activityLogs";
 import { addNotification } from "./notifications";
 
 // Reference to the 'products' collection
-const productsCollection = collection(db, "products");
+const productsCollection = () => collection(requireDb(), "products");
 
 /**
  * Add a new product to the inventory
@@ -26,7 +25,7 @@ const productsCollection = collection(db, "products");
 export const addProduct = async (productData) => {
   try {
     validateProduct(productData);
-    const docRef = await addDoc(productsCollection, {
+    const docRef = await addDoc(productsCollection(), {
       ...productData,
       price: Number(productData.price),
       stock: Number(productData.stock),
@@ -58,7 +57,7 @@ export const addProduct = async (productData) => {
  * Subscribe to products in real-time
  */
 export const subscribeToProducts = (callback, onError = console.error) => {
-  const q = query(productsCollection, orderBy("createdAt", "desc"));
+  const q = () => query(productsCollection(), orderBy("createdAt", "desc"));
   return onSnapshot(q, (snapshot) => {
     const products = [];
     snapshot.forEach((doc) => {
@@ -76,7 +75,7 @@ export const subscribeToProducts = (callback, onError = console.error) => {
  */
 export const incrementDemandCount = async (productId) => {
   try {
-    const productRef = doc(db, "products", productId);
+    const productRef = doc(requireDb(), "products", productId);
     await updateDoc(productRef, {
       demandCount: increment(1),
       updatedAt: serverTimestamp()
@@ -92,7 +91,7 @@ export const incrementDemandCount = async (productId) => {
  */
 export const getProducts = async () => {
   try {
-    const q = query(productsCollection, orderBy("createdAt", "desc"));
+    const q = () => query(productsCollection(), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     const products = [];
     querySnapshot.forEach((doc) => {
@@ -114,7 +113,7 @@ export const updateProduct = async (id, updates) => {
   try {
     if ('price' in updates || 'productName' in updates || 'category' in updates) validateProduct(updates);
     if ('stock' in updates && (!Number.isInteger(Number(updates.stock)) || Number(updates.stock) < 0)) throw new Error('Stock must be a non-negative whole number.');
-    const productRef = doc(db, "products", id);
+    const productRef = doc(requireDb(), "products", id);
     await updateDoc(productRef, {
       ...updates,
       ...('price' in updates ? { price: Number(updates.price) } : {}),
@@ -154,11 +153,11 @@ export const updateProduct = async (id, updates) => {
 
 /**
  * Delete a product by its ID
- * @param {string} id - The document ID of the product 
+ * @param {string} id - The document ID of the product
  */
 export const deleteProduct = async (id) => {
   try {
-    const productRef = doc(db, "products", id);
+    const productRef = doc(requireDb(), "products", id);
     await deleteDoc(productRef);
 
     await addActivityLog({

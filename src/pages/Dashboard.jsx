@@ -1,3 +1,5 @@
+import ProductImage from '../components/common/ProductImage';
+import { dataErrorMessage } from '../services/config';
 import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import SummaryCard from '../components/dashboard/SummaryCard';
@@ -36,7 +38,7 @@ export default function Dashboard() {
   const [dataError, setDataError] = useState('');
 
   useEffect(() => {
-    const onError = () => { setDataError('Dashboard data could not load.'); setLoading(false); };
+    const onError = error => { setDataError(dataErrorMessage(error)); setLoading(false); };
     const unsubProducts = subscribeToProducts(setProducts, onError);
     const unsubOrders = subscribeToOrders((updatedOrders) => {
       setOrders(updatedOrders);
@@ -65,12 +67,12 @@ export default function Dashboard() {
     .reduce((acc, order) => {
       const product = products.find(p => p.id === order.productId);
       const quantity = order.quantity || order.qty || order.count || 1;
-      return acc + (quantity * (product ? product.price : 10));
+      return acc + (quantity * (product ? product.price : 0));
     }, 0);
 
   const dashboardStats = [
     { name: 'Products', value: stats.totalProducts, icon: Package, sub: 'Total Catalog', color: 'text-blue-500' },
-    { name: 'Revenue Today', value: 'Ã¢â€šÂ¹' + Math.floor(revenueToday).toLocaleString(), icon: IndianRupee, sub: 'Gross Value', color: 'text-emerald-500' },
+    { name: 'Revenue Today', value: '\u20b9' + Math.floor(revenueToday).toLocaleString(), icon: IndianRupee, sub: 'Gross Value', color: 'text-emerald-500' },
     { name: 'Items Sold Today', value: stats.itemsSoldToday, icon: ShoppingBag, sub: 'Total Items Sold', color: 'text-brand-500' },
     { name: 'Orders Today', value: stats.totalOrdersToday, icon: ShoppingBag, sub: 'Document Count', color: 'text-amber-500' },
     { name: 'Low Stock', value: stats.lowStockCount, icon: AlertTriangle, sub: 'Requires Action', color: 'text-rose-500' },
@@ -156,15 +158,15 @@ export default function Dashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F010" />
-                <XAxis 
-                  dataKey="hour" 
-                  axisLine={false} 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="hour"
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
                   minTickGap={30}
                 />
                 <YAxis hide />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '16px', fontSize: '10px', color: '#fff' }}
                   itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
                 />
@@ -182,13 +184,13 @@ export default function Dashboard() {
            </div>
            <div className="space-y-6">
               {products.slice(0, 5).map((product, _i) => (
-                <motion.div 
+                <motion.div
                   layout
-                  key={product.id} 
+                  key={product.id}
                   className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <img src={product.imageUrl} className="h-10 w-10 rounded-xl object-cover" alt="" />
+                    <ProductImage src={product.imageUrl} className="h-10 w-10 rounded-xl object-cover" alt="" />
                     <div>
                       <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{product.name}</p>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{product.demandCount || 0} manifestions</p>

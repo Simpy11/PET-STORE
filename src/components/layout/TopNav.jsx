@@ -1,3 +1,4 @@
+import { dataErrorMessage } from '../../services/config';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Search, Menu, Moon, Sun, Terminal } from 'lucide-react';
@@ -9,12 +10,14 @@ export default function TopNav({ onOpenSidebar }) {
   const { theme, toggleTheme } = useTheme();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [notificationError, setNotificationError] = useState('');
   const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     const unsubscribe = subscribeToNotifications((updatedNotifications) => {
+      setNotificationError('');
       setNotifications(updatedNotifications);
-    });
+    }, error => setNotificationError(dataErrorMessage(error)));
     return () => unsubscribe();
   }, []);
 
@@ -52,7 +55,7 @@ export default function TopNav({ onOpenSidebar }) {
             </div>
           </form>
         </div>
-        
+
         <div className="flex items-center space-x-6">
            {/* System Status Indicator */}
            <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
@@ -89,11 +92,12 @@ export default function TopNav({ onOpenSidebar }) {
                 <span className="absolute top-2.5 right-2.5 block h-2 w-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-[#020617]" />
               )}
             </motion.button>
-            
+
             <AnimatePresence>
               {isNotificationsOpen && (
-                <NotificationCenter 
+                <NotificationCenter
                   notifications={notifications}
+                  error={notificationError}
                   onClose={() => setIsNotificationsOpen(false)}
                   onMarkAsRead={(id) => markAsRead(id)}
                   onClearAll={() => {/* Optional: Add clear all logic if needed */}}

@@ -1,22 +1,25 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { UploadCloud, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ImageUpload({ onUploadComplete }) {
+export default function ImageUpload({ onUploadComplete, onUploadingChange }) {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const uploadController = useRef(null);
+  useEffect(() => () => { uploadController.current?.abort(); }, []);
+  useEffect(() => () => { if (preview?.url) URL.revokeObjectURL(preview.url); }, [preview]);
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
   const handleFileProcess = async (file) => {
-    if (!file) return;
+    if (!file || loading) return;
 
     // Validate type
-    if (!file.type.match(/image\/(jpeg|png|webp)/)) {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
       setError('Please upload a valid image (PNG, JPG, WEBP).');
       return;
     }
@@ -30,12 +33,13 @@ export default function ImageUpload({ onUploadComplete }) {
     const objectUrl = URL.createObjectURL(file);
     setPreview({ url: objectUrl, name: file.name });
     setError('');
-    
+
     await uploadImage(file);
   };
 
   const handleFileChange = (e) => {
     handleFileProcess(e.target.files[0]);
+    e.target.value = '';
   };
 
   const handleDragOver = (e) => {
@@ -51,7 +55,7 @@ export default function ImageUpload({ onUploadComplete }) {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileProcess(e.dataTransfer.files[0]);
       e.dataTransfer.clearData();
@@ -60,13 +64,16 @@ export default function ImageUpload({ onUploadComplete }) {
 
   const uploadImage = async (file) => {
     setLoading(true);
-    
+    onUploadingChange?.(true);
+
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    
+
     if (!cloudName || !uploadPreset) {
       setError('Cloudinary configuration is missing. Check .env variables.');
       setLoading(false);
+      onUploadingChange?.(false);
+      setPreview(null);
       return;
     }
 
@@ -74,18 +81,21 @@ export default function ImageUpload({ onUploadComplete }) {
     formData.append('file', file);
     formData.append('upload_preset', uploadPreset);
 
+    uploadController.current = new AbortController();
     try {
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        formData
+        formData,
+        { timeout: 30000, signal: uploadController.current.signal }
       );
-      
+
       if (response.data && response.data.secure_url) {
         onUploadComplete(response.data.secure_url, file.name);
       } else {
         throw new Error('Invalid response from Cloudinary');
       }
     } catch (err) {
+      if (axios.isCancel(err)) return;
       console.error('Upload Error:', err);
       const apiErrorMessage = err.response?.data?.error?.message || err.message;
       setError(`Upload Failed: ${apiErrorMessage}`);
@@ -93,10 +103,13 @@ export default function ImageUpload({ onUploadComplete }) {
       onUploadComplete('');
     } finally {
       setLoading(false);
+      onUploadingChange?.(false);
     }
   };
 
   const removeImage = () => {
+    uploadController.current?.abort();
+    setLoading(false);
     setPreview(null);
     setError('');
     onUploadComplete('');
@@ -107,7 +120,7 @@ export default function ImageUpload({ onUploadComplete }) {
     <div className="w-full">
       <AnimatePresence>
         {error && (
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="mb-4 text-xs font-bold text-rose-500 bg-rose-500/10 px-4 py-2 rounded-xl flex items-center gap-2"
           >
@@ -115,7 +128,7 @@ export default function ImageUpload({ onUploadComplete }) {
           </motion.p>
         )}
       </AnimatePresence>
-      
+
       {!preview ? (
         <motion.div
           whileHover={{ scale: 1.01 }}
@@ -125,8 +138,8 @@ export default function ImageUpload({ onUploadComplete }) {
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
           className={`relative cursor-pointer mt-1 flex justify-center rounded-[2rem] border-2 border-dashed transition-all duration-300 px-6 py-14 overflow-hidden group ${
-            isDragging 
-              ? 'border-brand-500 bg-brand-500/5' 
+            isDragging
+              ? 'border-brand-500 bg-brand-500/5'
               : 'border-slate-300 dark:border-slate-800 hover:border-brand-400 hover:bg-slate-50 dark:hover:bg-slate-900/50'
           }`}
         >
@@ -136,7 +149,7 @@ export default function ImageUpload({ onUploadComplete }) {
           )}
 
           <div className="text-center relative z-10">
-            <motion.div 
+            <motion.div
               animate={isDragging ? { y: -10, scale: 1.1 } : { y: 0, scale: 1 }}
               className="mx-auto h-16 w-16 mb-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-center text-brand-500 group-hover:text-brand-600 group-hover:-translate-y-1 transition-all"
             >
@@ -150,16 +163,16 @@ export default function ImageUpload({ onUploadComplete }) {
               PNG, JPG, WEBP up to 5MB
             </p>
           </div>
-          <input 
-            ref={fileInputRef} 
-            type="file" 
-            className="hidden" 
-            accept="image/png, image/jpeg, image/webp" 
-            onChange={handleFileChange} 
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept="image/png, image/jpeg, image/webp"
+            onChange={handleFileChange}
           />
         </motion.div>
       ) : (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="relative mt-1 rounded-[2rem] overflow-hidden bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 group"
@@ -170,11 +183,11 @@ export default function ImageUpload({ onUploadComplete }) {
                <p className="text-[10px] font-bold text-brand-600 uppercase tracking-widest animate-pulse">Uploading to Cloud...</p>
             </div>
           )}
-          
+
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          
+
           <img src={preview.url} alt="Preview" className="w-full h-64 object-cover" />
-          
+
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -188,7 +201,7 @@ export default function ImageUpload({ onUploadComplete }) {
           >
             <X className="w-4 h-4" />
           </motion.button>
-          
+
           <div className="absolute bottom-4 left-4 right-4 z-30 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
              <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
                 <ImageIcon className="h-3 w-3 text-white/70" />

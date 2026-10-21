@@ -1,14 +1,14 @@
-import { 
-  collection, 
-  addDoc, 
-  serverTimestamp, 
-  query, 
-  orderBy, 
-  onSnapshot
-} from "firebase/firestore"; 
-import { db } from "./firebase";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { requireDb } from "./firebase";
+import { onSnapshot } from "./firestoreAccess";
 
-const activityLogsCollection = collection(db, "activityLogs");
+const activityLogsCollection = () => collection(requireDb(), "activityLogs");
 
 /**
  * Add a new activity log entry
@@ -16,7 +16,7 @@ const activityLogsCollection = collection(db, "activityLogs");
  */
 export const addActivityLog = async (logData) => {
   try {
-    await addDoc(activityLogsCollection, {
+    await addDoc(activityLogsCollection(), {
       ...logData,
       timestamp: serverTimestamp()
     });
@@ -31,7 +31,7 @@ export const addActivityLog = async (logData) => {
  * @param {String} category - Optional category filter (Orders, Inventory, Products, System)
  */
 export const subscribeToActivityLogs = (callback, category = null, onError = console.error) => {
-  const q = query(activityLogsCollection, orderBy("timestamp", "desc"));
+  const q = () => query(activityLogsCollection(), orderBy("timestamp", "desc"));
 
   return onSnapshot(q, (snapshot) => {
     const logs = [];

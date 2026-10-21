@@ -1,20 +1,19 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { firebaseSettings } from './config';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
+const { config, missing } = firebaseSettings(import.meta.env);
+let initializationError = missing.length ? Object.assign(new Error(`Firebase configuration is missing: ${missing.join(', ')}. Add these variables to Vercel and redeploy.`), { code: 'app/configuration' }) : null;
+let database = null;
+if (!initializationError) {
+  try {
+    database = getFirestore(getApps().length ? getApp() : initializeApp(config));
+  } catch (error) { initializationError = error; }
+}
+export const db = database;
+export const firebaseConfigurationError = initializationError;
+export function requireDb() {
+  if (initializationError) throw initializationError;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) throw Object.assign(new Error('You are offline. Reconnect before accessing the database.'), { code: 'unavailable' });
+  return database;
+}

@@ -1,3 +1,5 @@
+import ProductImage from '../components/common/ProductImage';
+import { dataErrorMessage } from '../services/config';
 import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,7 +58,7 @@ export default function Inventory() {
       setProducts(data);
     } catch (error) {
       console.error("Failed to load products", error);
-      setDataError("Could not load inventory.");
+      setDataError(dataErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -174,20 +176,20 @@ export default function Inventory() {
           <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white font-display uppercase tracking-tightest leading-tight">Asset <span className="text-brand-600 dark:text-brand-500">Inventory</span></h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">Synchronized monitoring of all categorized merchandise within the pet store perimeter.</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
-           <motion.button 
+           <motion.button
              whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
              whileTap={{ scale: 0.95 }}
-             onClick={fetchProducts} 
+             onClick={fetchProducts}
              className="p-3.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-slate-500 hover:text-brand-600 transition-all btn-hover"
            >
               <RefreshCw className="h-5 w-5" />
            </motion.button>
-           <motion.button 
+           <motion.button
              whileHover={{ scale: 1.02, y: -2 }}
              whileTap={{ scale: 0.98 }}
-             onClick={() => setIsAddModalOpen(true)} 
+             onClick={() => setIsAddModalOpen(true)}
              className="px-6 py-3.5 bg-brand-600 text-white rounded-2xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-700 transition-all flex items-center gap-2 btn-hover"
            >
               <Plus className="h-4 w-4" /> New Materialization
@@ -260,7 +262,7 @@ export default function Inventory() {
                       {/* â”€â”€ Media â”€â”€ */}
                       <td className="px-8 py-5">
                         <div className="relative h-14 w-14 group-hover:scale-110 transition-transform duration-500">
-                          <img
+                          <ProductImage
                             src={product.imageUrl}
                             alt={product.productName || product.name}
                             className="h-full w-full rounded-2xl object-cover ring-2 ring-white dark:ring-slate-900 shadow-sm"
@@ -456,7 +458,7 @@ export default function Inventory() {
                     onChange={(e) => setEditingProduct({ ...editingProduct, productName: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Market Value (â‚¹)</label>
@@ -493,17 +495,17 @@ export default function Inventory() {
               </div>
 
               <div className="flex items-center gap-4 mt-12">
-                <motion.button 
+                <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsEditModalOpen(false)} 
+                  onClick={() => setIsEditModalOpen(false)}
                   className="flex-1 py-4 px-6 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-900 transition-all btn-hover"
                 >
                   Abort
                 </motion.button>
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={handleUpdateProduct} 
+                  onClick={handleUpdateProduct}
                   className="flex-[2] py-4 px-8 bg-brand-600 text-white font-bold rounded-2xl text-xs uppercase tracking-widest hover:bg-brand-700 transition-all shadow-xl shadow-brand-500/20 btn-hover flex items-center justify-center gap-2"
                 >
                   <Save className="h-4 w-4" /> Sync Changes

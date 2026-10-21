@@ -1,15 +1,15 @@
-import { 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  orderBy, 
+import {
+  collection,
+  query,
+  where,
+  orderBy,
   Timestamp
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { requireDb } from "./firebase";
+import { onSnapshot } from "./firestoreAccess";
 
-const productsCollection = collection(db, "products");
-const ordersCollection = collection(db, "orders");
+const productsCollection = () => collection(requireDb(), "products");
+const ordersCollection = () => collection(requireDb(), "orders");
 
 /**
  * Subscribe to dashboard-wide stats
@@ -46,21 +46,21 @@ export const subscribeToDashboardStats = (callback, onError = console.error) => 
   }, onError);
 
   // 2. Listen for ALL orders and filter by today manually
-  const qOrders = query(ordersCollection);
+  const qOrders = () => query(ordersCollection());
   const unsubOrders = onSnapshot(qOrders, (snapshot) => {
     let totalItems = 0;
     let ordersToday = 0;
-    
+
     snapshot.forEach((doc) => {
       const data = doc.data();
       const orderDate = data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : new Date(0));
-      
+
       if (orderDate >= today) {
         ordersToday++;
         totalItems += Number(data.quantity || data.qty || data.count || 1) || 0;
       }
     });
-    
+
     stats.itemsSoldToday = totalItems;
     stats.totalOrdersToday = ordersToday;
     callback({ ...stats });
@@ -79,8 +79,8 @@ export const subscribeToHourlyOrders = (callback, onError = console.error) => {
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const dayAgoTimestamp = Timestamp.fromDate(dayAgo);
 
-  const q = query(
-    ordersCollection, 
+  const q = () => query(
+    ordersCollection(),
     where("createdAt", ">=", dayAgoTimestamp),
     orderBy("createdAt", "asc")
   );

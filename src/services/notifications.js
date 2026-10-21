@@ -1,17 +1,17 @@
-import { 
-  collection, 
-  addDoc, 
-  serverTimestamp, 
-  query, 
-  orderBy, 
-  onSnapshot,
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  orderBy,
   doc,
   updateDoc,
   limit
-} from "firebase/firestore"; 
-import { db } from "./firebase";
+} from "firebase/firestore";
+import { requireDb } from "./firebase";
+import { onSnapshot } from "./firestoreAccess";
 
-const notificationsCollection = collection(db, "notifications");
+const notificationsCollection = () => collection(requireDb(), "notifications");
 
 /**
  * Add a new notification
@@ -19,7 +19,7 @@ const notificationsCollection = collection(db, "notifications");
  */
 export const addNotification = async (data) => {
   try {
-    await addDoc(notificationsCollection, {
+    await addDoc(notificationsCollection(), {
       ...data,
       read: false,
       createdAt: serverTimestamp()
@@ -32,9 +32,9 @@ export const addNotification = async (data) => {
 /**
  * Subscribe to notifications in real-time
  */
-export const subscribeToNotifications = (callback) => {
-  const q = query(
-    notificationsCollection, 
+export const subscribeToNotifications = (callback, onError = console.error) => {
+  const q = () => query(
+    notificationsCollection(),
     orderBy("createdAt", "desc"),
     limit(50)
   );
@@ -47,6 +47,7 @@ export const subscribeToNotifications = (callback) => {
     callback(notifications);
   }, (error) => {
     console.error("Error subscribing to notifications: ", error);
+    onError(error);
   });
 };
 
@@ -55,7 +56,7 @@ export const subscribeToNotifications = (callback) => {
  */
 export const markAsRead = async (notificationId) => {
   try {
-    const notificationRef = doc(db, "notifications", notificationId);
+    const notificationRef = doc(requireDb(), "notifications", notificationId);
     await updateDoc(notificationRef, { read: true });
   } catch (error) {
     console.error("Error marking notification as read: ", error);

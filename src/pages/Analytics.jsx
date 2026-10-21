@@ -1,3 +1,4 @@
+import { dataErrorMessage } from '../services/config';
 import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import { getProducts } from '../services/products';
@@ -36,7 +37,7 @@ export default function Analytics() {
       setProducts(prods);
       setOrders(ords);
     } catch (error) {
-      setDataError('Could not load analytics data.');
+      setDataError(dataErrorMessage(error));
       console.error("Failed to load analytics data", error);
     } finally {
       setLoading(false);
@@ -50,7 +51,7 @@ export default function Analytics() {
 
   const productOrderCount = {};
   orders.forEach(o => {
-    // Determine the product name from the matching product if o.productName isn't robust, 
+    // Determine the product name from the matching product if o.productName isn't robust,
     // or just rely on o.productName if the orders schema also updated. For safety:
     const prod = products.find(p => p.id === o.productId);
     const resolvedName = prod ? (prod.productName || prod.name) : o.productName;
@@ -151,7 +152,7 @@ export default function Analytics() {
           <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white font-display uppercase tracking-tightest leading-tight">Insight <span className="text-brand-600 dark:text-brand-500">Telemetry</span></h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">Multi-vector performance markers synchronized with global inventory protocols.</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
            <div className="px-4 py-2 bg-brand-500/10 dark:bg-brand-500/20 rounded-full border border-brand-500/20 flex items-center gap-2">
               <Zap className="h-4 w-4 text-brand-600 dark:text-brand-400 fill-brand-600 dark:fill-brand-400" />
@@ -161,7 +162,7 @@ export default function Analytics() {
       </div>
 
       {/* High-Density Metrics */}
-      <motion.div 
+      <motion.div
         variants={{
           hidden: { opacity: 0 },
           show: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -173,9 +174,9 @@ export default function Analytics() {
         {metrics.map((m) => {
           const Icon = m.icon;
           return (
-            <motion.div 
+            <motion.div
               variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } } }}
-              key={m.title} 
+              key={m.title}
               className="glass-card rounded-4xl p-6 group hover:border-brand-500/30 transition-all duration-500"
             >
                <div className="flex items-center justify-between">
@@ -194,7 +195,7 @@ export default function Analytics() {
       </motion.div>
 
       {/* Advanced Telemetry Grid */}
-      <motion.div 
+      <motion.div
         variants={{
           hidden: { opacity: 0 },
           show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.3 } }
@@ -203,9 +204,9 @@ export default function Analytics() {
         animate="show"
         className="grid grid-cols-1 gap-8 lg:grid-cols-12"
       >
-        
+
         {/* Revenue Trajectory (Major Card) */}
-        <motion.div 
+        <motion.div
           variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } } }}
           className="lg:col-span-12 glass-card rounded-[2.5rem] p-8 lg:p-10 relative overflow-hidden group"
         >
@@ -218,7 +219,7 @@ export default function Analytics() {
                 <p className="text-xs text-slate-400 font-semibold tracking-wide uppercase">6-Month Fiscal Mapping</p>
              </div>
           </div>
-          
+
           <div className="relative z-10">
             {monthlySalesData.every(d => d.revenue === 0) ? (
               <div className="h-80 flex items-center justify-center text-slate-400 text-sm font-bold uppercase tracking-tighter opacity-40">No verified sales records.</div>
@@ -240,13 +241,13 @@ export default function Analytics() {
               </ResponsiveContainer>
             )}
           </div>
-          
+
           {/* Subtle BG Glow */}
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-brand-600/5 rounded-full blur-[100px] pointer-events-none group-hover:scale-110 transition-transform duration-1000"></div>
         </motion.div>
 
         {/* Segment Distribution (Bento Card) */}
-        <motion.div 
+        <motion.div
           variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } } }}
           className="lg:col-span-5 glass-card rounded-[2.5rem] p-8 group"
         >
@@ -254,7 +255,7 @@ export default function Analytics() {
              <PieIcon className="h-4 w-4 text-emerald-500" />
              <h2 className="text-xl font-bold text-slate-900 dark:text-white font-display uppercase tracking-tight">Segments</h2>
           </div>
-          
+
           <div className="h-80">
             {categoryData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-sm font-bold uppercase tracking-tighter opacity-40">Null Data</div>
@@ -288,7 +289,7 @@ export default function Analytics() {
         </motion.div>
 
         {/* Velocity Monitor (Bento Card) */}
-        <motion.div 
+        <motion.div
           variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 200, damping: 20 } } }}
           className="lg:col-span-7 glass-card rounded-[2.5rem] p-8 group"
         >
@@ -296,7 +297,7 @@ export default function Analytics() {
              <BarChart3 className="h-4 w-4 text-amber-500" />
              <h2 className="text-xl font-bold text-slate-900 dark:text-white font-display uppercase tracking-tight">Flow Velocity</h2>
           </div>
-          
+
           <div className="h-80">
             {ordersPerDayData.every(d => d.orders === 0) ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-sm font-bold uppercase tracking-tighter opacity-40">No Signal</div>

@@ -1,3 +1,4 @@
+import { dataErrorMessage } from '../services/config';
 import DataError from '../components/common/DataError';
 import React, { useEffect, useState, useRef } from 'react';
 import { subscribeToOrders, updateOrder, addOrder } from '../services/orders';
@@ -49,7 +50,7 @@ export default function Orders() {
 
   useEffect(() => {
     fetchProducts();
-    
+
     const unsubscribe = subscribeToOrders((updatedOrders) => {
       if (!isFirstLoad.current && updatedOrders.length > orderCount.current) {
         const latestOrder = updatedOrders[0];
@@ -59,11 +60,10 @@ export default function Orders() {
         highlightTimer.current = setTimeout(() => setNewOrderHighlight(null), 5000);
       }
       orderCount.current = updatedOrders.length;
-      setDataError('');
       setOrders(updatedOrders);
       setLoading(false);
       isFirstLoad.current = false;
-    }, () => { setDataError('Could not load orders.'); setLoading(false); });
+    }, error => { setDataError(dataErrorMessage(error)); setLoading(false); });
 
     return () => { unsubscribe(); clearTimeout(highlightTimer.current); };
   }, [addToast]);
@@ -74,7 +74,7 @@ export default function Orders() {
       setProducts(prodData);
     } catch (error) {
       console.error("Failed to fetch products", error);
-      setDataError("Could not load products for orders.");
+      setDataError(dataErrorMessage(error));
     }
   };
 
@@ -111,7 +111,7 @@ export default function Orders() {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       (order.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (order.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (order.customerName || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -146,10 +146,10 @@ export default function Orders() {
           <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white font-display uppercase tracking-tightest leading-tight">Order <span className="text-brand-600 dark:text-brand-500">Manifest</span></h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">Real-time ledger of all incoming and processed transactions within the eco-system.</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
-           <button 
-             onClick={() => setShowNewOrder(true)} 
+           <button
+             onClick={() => setShowNewOrder(true)}
              className="px-6 py-3.5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
            >
               <Plus className="h-4 w-4" /> Manifest Order
@@ -166,8 +166,8 @@ export default function Orders() {
                 key={status}
                 onClick={() => { setStatusFilter(status); setCurrentPage(1); }}
                 className={`px-5 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-[0.15em] transition-all border-2 ${
-                  statusFilter === status 
-                    ? 'bg-brand-600 border-brand-600 text-white shadow-xl shadow-brand-500/20' 
+                  statusFilter === status
+                    ? 'bg-brand-600 border-brand-600 text-white shadow-xl shadow-brand-500/20'
                     : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-brand-500'
                 }`}
               >
@@ -202,7 +202,7 @@ export default function Orders() {
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20">
               <AnimatePresence mode="popLayout">
                 {paginatedOrders.length === 0 ? (
-                   <motion.tr 
+                   <motion.tr
                      initial={{ opacity: 0 }}
                      animate={{ opacity: 1 }}
                      exit={{ opacity: 0 }}
@@ -225,19 +225,19 @@ export default function Orders() {
                     const displayCustomerName = order.customerName || order.buyerName || order.userName || 'Unknown Consignee';
                     const displayCustomerEmail = order.customerEmail || order.buyerEmail || order.email || '';
                     const displayQuantity = order.quantity || order.qty || order.count || 1;
-                    
+
                     return (
-                      <motion.tr 
+                      <motion.tr
                         layout
                         initial={{ opacity: 0, x: -20 }}
-                        animate={{ 
-                          opacity: 1, 
+                        animate={{
+                          opacity: 1,
                           x: 0,
                           backgroundColor: isNew ? 'var(--color-brand-500-10, rgba(14, 165, 233, 0.1))' : 'transparent',
                           scale: isNew ? 1.01 : 1
                         }}
                         exit={{ opacity: 0, x: 20 }}
-                        key={order.id} 
+                        key={order.id}
                         className={`group transition-all duration-300 ${isNew ? 'ring-2 ring-brand-500 ring-inset' : 'hover:bg-brand-500/[0.03]'}`}
                       >
                         <td className="px-10 py-6">
@@ -316,14 +316,14 @@ export default function Orders() {
       <AnimatePresence>
         {showNewOrder && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowNewOrder(false)}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" 
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -339,7 +339,7 @@ export default function Orders() {
                     <X className="h-8 w-8 text-slate-400" />
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleCreateOrder} className="space-y-8">
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] ml-2">Target Consumable</label>
@@ -397,14 +397,14 @@ export default function Orders() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-6 pt-6">
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => setShowNewOrder(false)} 
+                      onClick={() => setShowNewOrder(false)}
                       className="w-full sm:flex-1 py-5 px-8 border-2 border-slate-100 dark:border-slate-800 text-slate-400 font-bold rounded-[1.5rem] text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all btn-hover"
                     >
                       Discard Sync
                     </button>
-                    <button 
+                    <button
                       type="submit"
                       disabled={submitting}
                       className="w-full sm:flex-[2] py-5 px-10 bg-brand-600 text-white font-bold rounded-[1.5rem] text-[10px] uppercase tracking-widest hover:bg-brand-700 transition-all shadow-2xl shadow-brand-500/30 btn-hover flex items-center justify-center gap-3 disabled:opacity-50"

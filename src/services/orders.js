@@ -1,22 +1,21 @@
 import {
   collection,
   addDoc,
-  getDocs,
   doc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
   query,
   orderBy,
-  onSnapshot
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { requireDb } from "./firebase";
+import { onSnapshot, getDocs } from "./firestoreAccess";
 import { normalizeOrder } from "./normalize";
 import { incrementDemandCount } from "./products";
 import { addActivityLog } from "./activityLogs";
 import { addNotification } from "./notifications";
 
-const ordersCollection = collection(db, "orders");
+const ordersCollection = () => collection(requireDb(), "orders");
 
 /**
  * Add a new order
@@ -25,17 +24,17 @@ export const addOrder = async (orderData) => {
   try {
     if (!orderData.productId || !orderData.customerName?.trim() || !orderData.customerEmail?.trim()) throw new Error('Product and customer details are required.');
     if (!Number.isInteger(orderData.quantity) || orderData.quantity < 1) throw new Error('Quantity must be a positive whole number.');
-    const docRef = await addDoc(ordersCollection, {
+    const docRef = await addDoc(ordersCollection(), {
       ...orderData,
       createdAt: serverTimestamp(),
       status: orderData.status || "Pending"
     });
-    
+
     // Automatically increment demand count for the product
     if (orderData.productId) {
       await incrementDemandCount(orderData.productId).catch(error => console.error("Order saved, but demand count update failed", error));
     }
-    
+
     await addActivityLog({
       actionType: "Order created",
       description: `New manifestation for ${orderData.customerName}: ${orderData.productName}`,
@@ -48,7 +47,7 @@ export const addOrder = async (orderData) => {
       type: "order",
       actionPath: "/orders"
     });
-    
+
     return { id: docRef.id, ...orderData };
   } catch (error) {
     console.error("Error adding order: ", error);
@@ -60,7 +59,7 @@ export const addOrder = async (orderData) => {
  * Subscribe to orders in real-time
  */
 export const subscribeToOrders = (callback, onError = console.error) => {
-  const q = query(ordersCollection, orderBy("createdAt", "desc"));
+  const q = () => query(ordersCollection(), orderBy("createdAt", "desc"));
   return onSnapshot(q, (snapshot) => {
     const orders = [];
     snapshot.forEach((doc) => {
@@ -78,7 +77,7 @@ export const subscribeToOrders = (callback, onError = console.error) => {
  */
 export const getOrders = async () => {
   try {
-    const q = query(ordersCollection, orderBy("createdAt", "desc"));
+    const q = () => query(ordersCollection(), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     const orders = [];
     querySnapshot.forEach((doc) => {
@@ -96,7 +95,7 @@ export const getOrders = async () => {
  */
 export const updateOrder = async (id, updates) => {
   try {
-    const orderRef = doc(db, "orders", id);
+    const orderRef = doc(requireDb(), "orders", id);
     await updateDoc(orderRef, updates);
 
     if (updates.status) {
@@ -120,7 +119,7 @@ export const updateOrder = async (id, updates) => {
  */
 export const deleteOrder = async (id) => {
   try {
-    const orderRef = doc(db, "orders", id);
+    const orderRef = doc(requireDb(), "orders", id);
     await deleteDoc(orderRef);
     return id;
   } catch (error) {

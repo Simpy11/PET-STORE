@@ -1,3 +1,7 @@
+import DataError from '../components/common/DataError';
+import { firebaseConfigurationError } from '../services/firebase';
+import { dataErrorMessage } from '../services/config';
+import ProductImage from '../components/common/ProductImage';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +23,7 @@ export default function AddProduct({ onClose, onSuccess }) {
     imageName: '', // For the preview card
   });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,6 +43,7 @@ export default function AddProduct({ onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (uploading || loading) return;
     setLoading(true);
 
     try {
@@ -50,12 +56,12 @@ export default function AddProduct({ onClose, onSuccess }) {
         category: formData.category,
         price: formData.price,
         stock: formData.stock,
-        imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=400&h=400'
+        imageUrl: formData.imageUrl || ''
       };
 
       await addProduct(productData);
       addToast('Product successfully added to catalog!', 'success');
-      
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -73,6 +79,7 @@ export default function AddProduct({ onClose, onSuccess }) {
 
   return (
     <div className={onClose ? "" : "max-w-5xl mx-auto"}>
+      <DataError message={firebaseConfigurationError ? dataErrorMessage(firebaseConfigurationError) : ''} />
       {/* Header Evolution */}
       {!onClose && (
         <div className="mb-12">
@@ -94,7 +101,7 @@ export default function AddProduct({ onClose, onSuccess }) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        
+
         {/* Main Form (Bento Card) */}
         <div className="lg:col-span-8">
           <div className="glass-card glass-shine rounded-[2.5rem] overflow-hidden border border-white/40 shadow-2xl shadow-slate-200/50 dark:shadow-none p-10 lg:p-12">
@@ -150,7 +157,7 @@ export default function AddProduct({ onClose, onSuccess }) {
                     <div className="relative group/input">
                       <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none group-focus-within/input:text-brand-600 transition-colors">
                         <div className="h-[3.25rem] w-12 flex items-center justify-center text-slate-400 font-bold text-lg">
-                           ₹
+                           â‚¹
                         </div>
                       </div>
                       <input
@@ -205,10 +212,10 @@ export default function AddProduct({ onClose, onSuccess }) {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || uploading}
                   className="flex-1 py-5 px-10 bg-brand-600 text-white rounded-[1.5rem] text-[10px] font-bold uppercase tracking-widest shadow-2xl shadow-brand-500/30 hover:bg-brand-700 transition-all btn-hover disabled:opacity-50 flex items-center justify-center gap-3"
                 >
-                  <Save className="h-5 w-5" /> {loading ? 'Saving to Database...' : 'Add Product'}
+                  <Save className="h-5 w-5" /> {uploading ? 'Uploading image...' : loading ? 'Saving to Database...' : 'Add Product'}
                 </motion.button>
               </div>
             </form>
@@ -217,10 +224,10 @@ export default function AddProduct({ onClose, onSuccess }) {
 
         {/* Media Bento Column */}
         <div className="lg:col-span-4 flex flex-col gap-10">
-          
+
           <AnimatePresence mode="popLayout" initial={false}>
             {!formData.imageUrl ? (
-              <motion.div 
+              <motion.div
                 key="uploader"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -231,12 +238,13 @@ export default function AddProduct({ onClose, onSuccess }) {
                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Product Image</h3>
                     <ImageIcon className="h-4 w-4 text-brand-600" />
                  </div>
-                 <ImageUpload 
-                    onUploadComplete={handleImageUpload} 
+                 <ImageUpload
+                    onUploadComplete={handleImageUpload}
+                    onUploadingChange={setUploading}
                   />
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 key="preview-card"
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }}
@@ -250,7 +258,7 @@ export default function AddProduct({ onClose, onSuccess }) {
                 </div>
 
                 <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden">
-                   <img src={formData.imageUrl} className="h-full w-full object-cover" alt="Product Preview" />
+                   <ProductImage src={formData.imageUrl} className="h-full w-full object-cover" alt="Product Preview" />
                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-80" />
                 </div>
 
@@ -264,7 +272,7 @@ export default function AddProduct({ onClose, onSuccess }) {
                         <span className="text-xs font-medium text-slate-300 truncate max-w-[150px]">{formData.imageName || 'image_file.jpg'}</span>
                      </div>
                    </div>
-                   
+
                    <motion.button
                      whileHover={{ scale: 1.1, backgroundColor: '#ef4444' }}
                      whileTap={{ scale: 0.9 }}
@@ -277,7 +285,7 @@ export default function AddProduct({ onClose, onSuccess }) {
               </motion.div>
             )}
           </AnimatePresence>
-          
+
         </div>
 
       </div>

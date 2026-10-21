@@ -1,4 +1,5 @@
 import React from 'react';
+import PageTransition from './components/common/PageTransition';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import AdminLayout from './components/layout/AdminLayout';
@@ -13,7 +14,7 @@ import { ThemeProvider } from './components/common/ThemeProvider';
 
 function PageRoutes() {
   const location = useLocation();
-  return <ErrorBoundary key={location.pathname}><Routes location={location}>
+  return <ErrorBoundary key={location.pathname}><PageTransition><Routes location={location}>
     <Route path="/" element={<Dashboard />} />
     <Route path="/inventory" element={<Inventory />} />
     <Route path="/add" element={<AddProduct />} />
@@ -21,7 +22,7 @@ function PageRoutes() {
     <Route path="/analytics" element={<Analytics />} />
     <Route path="/logs" element={<Logs />} />
     <Route path="*" element={<div className="p-8 dark:text-white"><h1 className="text-2xl font-bold">Page not found</h1><Link className="underline" to="/">Go to dashboard</Link></div>} />
-  </Routes></ErrorBoundary>;
+  </Routes></PageTransition></ErrorBoundary>;
 }
 
 function App() {

@@ -41,15 +41,15 @@ export default function AddProduct({ onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      if (!formData.productName || !formData.category || !formData.price || !formData.stock) {
+      if (!formData.productName || !formData.category || formData.price === '' || formData.stock === '') {
         throw new Error('Please fill in all required fields.');
       }
 
       const productData = {
         productName: formData.productName,
         category: formData.category,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock, 10),
+        price: formData.price,
+        stock: formData.stock,
         imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=400&h=400'
       };
 

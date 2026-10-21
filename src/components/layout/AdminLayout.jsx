@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import TopNav from './TopNav';
-import PageTransition from '../common/PageTransition';
 import { subscribeToNotifications } from '../../services/notifications';
 import NotificationToast from '../notifications/NotificationToast';
 
 export default function AdminLayout({ children }) {
-  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeToasts, setActiveToasts] = useState([]);
 
   useEffect(() => {
@@ -45,16 +44,13 @@ export default function AdminLayout({ children }) {
         <div className="nebula-blob w-[300px] h-[300px] bg-violet-500 top-1/2 left-1/3 animate-[pulse_10s_infinite]"></div>
       </div>
 
-      <Sidebar />
-      <div className="flex flex-1 flex-col md:pl-64 transition-all duration-300 relative z-10">
-        <TopNav />
+      {sidebarOpen && <button aria-label="Close sidebar" className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col md:pl-64 transition-all duration-300 relative z-10">
+        <TopNav onOpenSidebar={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10">
           <div className="mx-auto max-w-7xl">
-            <AnimatePresence mode="wait">
-              <PageTransition key={location.pathname}>
-                {children}
-              </PageTransition>
-            </AnimatePresence>
+            {children}
           </div>
         </main>
       </div>

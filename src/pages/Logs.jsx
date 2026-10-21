@@ -1,3 +1,4 @@
+import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { subscribeToActivityLogs } from '../services/activityLogs';
@@ -25,16 +26,17 @@ const itemVariants = {
 export default function Logs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
   const [activeFilter, setActiveFilter] = useState('System');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    setLoading(true);
     const unsubscribe = subscribeToActivityLogs((updatedLogs) => {
+      setDataError('');
       setLogs(updatedLogs);
       setLoading(false);
-    }, activeFilter === 'System' ? null : activeFilter);
+    }, activeFilter === 'System' ? null : activeFilter, () => { setDataError('Could not load activity logs.'); setLoading(false); });
 
     return () => unsubscribe();
   }, [activeFilter]);
@@ -45,8 +47,9 @@ export default function Logs() {
     log.user.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
-  const paginatedLogs = filteredLogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / ITEMS_PER_PAGE));
+  const page = Math.min(currentPage, totalPages);
+  const paginatedLogs = filteredLogs.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const filters = [
     { name: 'System', icon: Terminal, color: 'text-slate-500', bg: 'bg-slate-500/10' },
@@ -82,6 +85,7 @@ export default function Logs() {
 
   return (
     <div className="space-y-10 selection:bg-brand-500/20">
+      <DataError message={dataError} />
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
@@ -125,7 +129,7 @@ export default function Logs() {
             placeholder="Search logs by action, user, or description..."
             className="w-full pl-12 pr-4 py-3 bg-white/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all dark:text-white placeholder-slate-400"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           />
         </div>
       </div>
@@ -211,19 +215,19 @@ export default function Logs() {
             <div className="flex items-center gap-2">
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
+                disabled={page === 1}
+                onClick={() => setCurrentPage(page - 1)}
                 className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-500 disabled:opacity-20 translate-y-[-1px]"
               >
                 <ChevronLeft className="h-4 w-4" />
               </motion.button>
               <div className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-[10px] font-black font-mono">
-                {currentPage} / {totalPages}
+                {page} / {totalPages}
               </div>
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
+                disabled={page === totalPages}
+                onClick={() => setCurrentPage(page + 1)}
                 className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-500 disabled:opacity-20 translate-y-[-1px]"
               >
                 <ChevronRight className="h-4 w-4" />

@@ -41,6 +41,7 @@ const Modal = ({ isOpen, onClose, children, title }) => {
             }}
             className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto glass-card rounded-[2.5rem] border border-white/40 dark:border-slate-800/50 shadow-2xl shadow-slate-950/20"
           >
+            {title && <h2 className="px-6 pt-6 text-xl font-bold dark:text-white">{title}</h2>}
             {/* Header / Close Button */}
             <div className="sticky top-0 right-0 p-6 flex justify-end z-10">
               <button

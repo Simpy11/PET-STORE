@@ -1,3 +1,4 @@
+import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import { getProducts } from '../services/products';
 import { getOrders } from '../services/orders';
@@ -17,6 +18,7 @@ export default function Analytics() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
 
   const isDark = theme === 'dark';
   const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
@@ -29,10 +31,12 @@ export default function Analytics() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setDataError('');
       const [prods, ords] = await Promise.all([getProducts(), getOrders()]);
       setProducts(prods);
       setOrders(ords);
     } catch (error) {
+      setDataError('Could not load analytics data.');
       console.error("Failed to load analytics data", error);
     } finally {
       setLoading(false);
@@ -136,6 +140,7 @@ export default function Analytics() {
 
   return (
     <div className="space-y-10">
+      <DataError message={dataError} />
       {/* Telemetry Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
@@ -228,8 +233,8 @@ export default function Analytics() {
                   </defs>
                   <CartesianGrid strokeDasharray="10 10" stroke={gridColor} vertical={false} />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: textColor, fontWeight: 800, letterSpacing: '0.1em' }} dy={20} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: textColor, fontWeight: 800 }} tickFormatter={(v) => `₹${v}`} dx={-10} />
-                  <Tooltip content={<CustomTooltip prefix="₹" />} cursor={{ stroke: 'rgba(99,102,241,0.2)', strokeWidth: 2 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: textColor, fontWeight: 800 }} tickFormatter={(v) => `â‚¹${v}`} dx={-10} />
+                  <Tooltip content={<CustomTooltip prefix="â‚¹" />} cursor={{ stroke: 'rgba(99,102,241,0.2)', strokeWidth: 2 }} />
                   <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={4} fill="url(#colorRevenue)" isAnimationActive={true} animationDuration={1500} animationEasing="ease-out" strokeLinecap="round" />
                 </AreaChart>
               </ResponsiveContainer>

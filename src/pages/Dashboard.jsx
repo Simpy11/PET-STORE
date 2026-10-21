@@ -1,3 +1,4 @@
+import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import SummaryCard from '../components/dashboard/SummaryCard';
 import { Package, AlertTriangle, ShoppingBag, IndianRupee, TrendingUp, ArrowRight, Sparkles, Zap, Flame, MoveRight, Clock } from 'lucide-react';
@@ -32,15 +33,17 @@ export default function Dashboard() {
   });
   const [hourlyData, setHourlyData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
 
   useEffect(() => {
-    const unsubProducts = subscribeToProducts(setProducts);
+    const onError = () => { setDataError('Dashboard data could not load.'); setLoading(false); };
+    const unsubProducts = subscribeToProducts(setProducts, onError);
     const unsubOrders = subscribeToOrders((updatedOrders) => {
       setOrders(updatedOrders);
       setLoading(false);
-    });
-    const unsubStats = subscribeToDashboardStats(setStats);
-    const unsubHourly = subscribeToHourlyOrders(setHourlyData);
+    }, onError);
+    const unsubStats = subscribeToDashboardStats(setStats, onError);
+    const unsubHourly = subscribeToHourlyOrders(setHourlyData, onError);
 
     return () => {
       unsubProducts();
@@ -67,7 +70,7 @@ export default function Dashboard() {
 
   const dashboardStats = [
     { name: 'Products', value: stats.totalProducts, icon: Package, sub: 'Total Catalog', color: 'text-blue-500' },
-    { name: 'Revenue Today', value: '₹' + Math.floor(revenueToday).toLocaleString(), icon: IndianRupee, sub: 'Gross Value', color: 'text-emerald-500' },
+    { name: 'Revenue Today', value: 'Ã¢â€šÂ¹' + Math.floor(revenueToday).toLocaleString(), icon: IndianRupee, sub: 'Gross Value', color: 'text-emerald-500' },
     { name: 'Items Sold Today', value: stats.itemsSoldToday, icon: ShoppingBag, sub: 'Total Items Sold', color: 'text-brand-500' },
     { name: 'Orders Today', value: stats.totalOrdersToday, icon: ShoppingBag, sub: 'Document Count', color: 'text-amber-500' },
     { name: 'Low Stock', value: stats.lowStockCount, icon: AlertTriangle, sub: 'Requires Action', color: 'text-rose-500' },
@@ -87,6 +90,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10 pb-20">
+      <DataError message={dataError} />
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
@@ -177,7 +181,7 @@ export default function Dashboard() {
               <Flame className="h-5 w-5 text-brand-500 animate-pulse" />
            </div>
            <div className="space-y-6">
-              {products.slice(0, 5).map((product, i) => (
+              {products.slice(0, 5).map((product, _i) => (
                 <motion.div 
                   layout
                   key={product.id} 

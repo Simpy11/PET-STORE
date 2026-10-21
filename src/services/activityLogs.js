@@ -4,8 +4,7 @@ import {
   serverTimestamp, 
   query, 
   orderBy, 
-  onSnapshot,
-  where
+  onSnapshot
 } from "firebase/firestore"; 
 import { db } from "./firebase";
 
@@ -31,25 +30,18 @@ export const addActivityLog = async (logData) => {
  * @param {Function} callback - Callback with logs array
  * @param {String} category - Optional category filter (Orders, Inventory, Products, System)
  */
-export const subscribeToActivityLogs = (callback, category = null) => {
-  let q;
-  if (category && category !== 'System') {
-    q = query(
-      activityLogsCollection, 
-      where("category", "==", category),
-      orderBy("timestamp", "desc")
-    );
-  } else {
-    q = query(activityLogsCollection, orderBy("timestamp", "desc"));
-  }
+export const subscribeToActivityLogs = (callback, category = null, onError = console.error) => {
+  const q = query(activityLogsCollection, orderBy("timestamp", "desc"));
 
   return onSnapshot(q, (snapshot) => {
     const logs = [];
     snapshot.forEach((doc) => {
-      logs.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      logs.push({ ...data, id: doc.id, description: String(data.description ?? ''), actionType: String(data.actionType ?? ''), user: String(data.user ?? '') });
     });
-    callback(logs);
+    callback(category && category !== 'System' ? logs.filter(log => log.category === category) : logs);
   }, (error) => {
     console.error("Error subscribing to activity logs: ", error);
+    onError(error);
   });
 };

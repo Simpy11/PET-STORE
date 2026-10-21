@@ -5,7 +5,7 @@ import { useTheme } from '../common/ThemeProvider';
 import { subscribeToNotifications, markAsRead } from '../../services/notifications';
 import NotificationCenter from '../notifications/NotificationCenter';
 
-export default function TopNav() {
+export default function TopNav({ onOpenSidebar }) {
   const { theme, toggleTheme } = useTheme();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -21,6 +21,7 @@ export default function TopNav() {
   return (
     <div className="sticky top-0 z-40 flex h-24 flex-shrink-0 bg-white/40 dark:bg-obsidian-900/40 backdrop-blur-xl transition-all duration-500">
       <motion.button
+        onClick={onOpenSidebar}
         type="button"
         whileHover={{ scale: 1.1, boxShadow: '0 0 14px 3px rgba(99,102,241,0.25)' }}
         whileTap={{ scale: 0.88 }}

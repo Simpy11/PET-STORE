@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'temp_team_repo/**', 'petstore-dashboard/**']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -23,7 +23,9 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]|^motion$', argsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  { files: ['src/components/common/*Provider.jsx'], rules: { 'react-refresh/only-export-components': 'off' } },
+  { files: ['test-cloudinary-axios.js'], languageOptions: { globals: globals.node } },
 ])

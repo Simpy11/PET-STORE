@@ -12,9 +12,9 @@ const menuItems = [
   { name: 'Activity Logs', icon: Activity, path: '/logs' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   return (
-    <aside className="fixed inset-y-0 left-0 w-64 bg-obsidian-900 border-r border-white/5 flex flex-col transition-all duration-500 z-50">
+    <aside aria-label="Main navigation" className={`fixed inset-y-0 left-0 w-64 bg-obsidian-900 border-r border-white/5 flex flex-col transition-transform duration-300 z-50 md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
       {/* Brand area */}
       <div className="flex h-24 items-center flex-shrink-0 px-8">
         <div className="relative group">
@@ -40,6 +40,7 @@ export default function Sidebar() {
                 <NavLink
                   key={item.name}
                   to={item.path}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     `group relative flex items-center px-4 py-4 text-xs font-bold rounded-2xl transition-all duration-500 outline-none ${
                       isActive ? 'text-white' : 'text-slate-500 hover:text-white/80'
@@ -87,10 +88,10 @@ export default function Sidebar() {
         <div>
           <h3 className="px-3 text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase tracking-[0.25em] mb-6">Systems</h3>
           <div className="space-y-3 px-1">
-             <Link to="/inventory" className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold text-slate-500 hover:text-brand-400 transition-all bg-white/5 rounded-2xl border border-white/5 hover:border-brand-500/20 uppercase tracking-widest">
+             <Link onClick={onClose} to="/logs" className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold text-slate-500 hover:text-brand-400 transition-all bg-white/5 rounded-2xl border border-white/5 hover:border-brand-500/20 uppercase tracking-widest">
                 <Cpu className="h-3 w-3" /> System Logs
              </Link>
-             <Link to="/orders" className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold text-slate-500 hover:text-brand-400 transition-all bg-white/5 rounded-2xl border border-white/5 hover:border-brand-500/20 uppercase tracking-widest mt-2">
+             <Link onClick={onClose} to="/analytics" className="flex items-center gap-3 px-4 py-3 text-[10px] font-bold text-slate-500 hover:text-brand-400 transition-all bg-white/5 rounded-2xl border border-white/5 hover:border-brand-500/20 uppercase tracking-widest mt-2">
                 <Activity className="h-3 w-3" /> Telemetry
              </Link>
           </div>

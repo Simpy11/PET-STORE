@@ -11,6 +11,7 @@ import {
   onSnapshot
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { normalizeOrder } from "./normalize";
 import { incrementDemandCount } from "./products";
 import { addActivityLog } from "./activityLogs";
 import { addNotification } from "./notifications";
@@ -22,6 +23,8 @@ const ordersCollection = collection(db, "orders");
  */
 export const addOrder = async (orderData) => {
   try {
+    if (!orderData.productId || !orderData.customerName?.trim() || !orderData.customerEmail?.trim()) throw new Error('Product and customer details are required.');
+    if (!Number.isInteger(orderData.quantity) || orderData.quantity < 1) throw new Error('Quantity must be a positive whole number.');
     const docRef = await addDoc(ordersCollection, {
       ...orderData,
       createdAt: serverTimestamp(),
@@ -30,7 +33,7 @@ export const addOrder = async (orderData) => {
     
     // Automatically increment demand count for the product
     if (orderData.productId) {
-      await incrementDemandCount(orderData.productId);
+      await incrementDemandCount(orderData.productId).catch(error => console.error("Order saved, but demand count update failed", error));
     }
     
     await addActivityLog({
@@ -56,16 +59,17 @@ export const addOrder = async (orderData) => {
 /**
  * Subscribe to orders in real-time
  */
-export const subscribeToOrders = (callback) => {
+export const subscribeToOrders = (callback, onError = console.error) => {
   const q = query(ordersCollection, orderBy("createdAt", "desc"));
   return onSnapshot(q, (snapshot) => {
     const orders = [];
     snapshot.forEach((doc) => {
-      orders.push({ id: doc.id, ...doc.data() });
+      orders.push(normalizeOrder(doc.data(), doc.id));
     });
     callback(orders);
   }, (error) => {
     console.error("Error subscribing to orders: ", error);
+    onError(error);
   });
 };
 
@@ -78,7 +82,7 @@ export const getOrders = async () => {
     const querySnapshot = await getDocs(q);
     const orders = [];
     querySnapshot.forEach((doc) => {
-      orders.push({ id: doc.id, ...doc.data() });
+      orders.push(normalizeOrder(doc.data(), doc.id));
     });
     return orders;
   } catch (error) {

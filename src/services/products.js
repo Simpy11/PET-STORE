@@ -12,6 +12,7 @@ import {
   increment
 } from "firebase/firestore"; 
 import { db } from "./firebase";
+import { normalizeProduct, validateProduct } from "./normalize";
 import { addActivityLog } from "./activityLogs";
 import { addNotification } from "./notifications";
 
@@ -24,8 +25,11 @@ const productsCollection = collection(db, "products");
  */
 export const addProduct = async (productData) => {
   try {
+    validateProduct(productData);
     const docRef = await addDoc(productsCollection, {
       ...productData,
+      price: Number(productData.price),
+      stock: Number(productData.stock),
       demandCount: 0,
       createdAt: serverTimestamp()
     });
@@ -53,16 +57,17 @@ export const addProduct = async (productData) => {
 /**
  * Subscribe to products in real-time
  */
-export const subscribeToProducts = (callback) => {
+export const subscribeToProducts = (callback, onError = console.error) => {
   const q = query(productsCollection, orderBy("createdAt", "desc"));
   return onSnapshot(q, (snapshot) => {
     const products = [];
     snapshot.forEach((doc) => {
-      products.push({ id: doc.id, ...doc.data() });
+      products.push(normalizeProduct(doc.data(), doc.id));
     });
     callback(products);
   }, (error) => {
     console.error("Error subscribing to products: ", error);
+    onError(error);
   });
 };
 
@@ -91,7 +96,7 @@ export const getProducts = async () => {
     const querySnapshot = await getDocs(q);
     const products = [];
     querySnapshot.forEach((doc) => {
-      products.push({ id: doc.id, ...doc.data() });
+      products.push(normalizeProduct(doc.data(), doc.id));
     });
     return products;
   } catch (error) {
@@ -107,9 +112,13 @@ export const getProducts = async () => {
  */
 export const updateProduct = async (id, updates) => {
   try {
+    if ('price' in updates || 'productName' in updates || 'category' in updates) validateProduct(updates);
+    if ('stock' in updates && (!Number.isInteger(Number(updates.stock)) || Number(updates.stock) < 0)) throw new Error('Stock must be a non-negative whole number.');
     const productRef = doc(db, "products", id);
     await updateDoc(productRef, {
       ...updates,
+      ...('price' in updates ? { price: Number(updates.price) } : {}),
+      ...('stock' in updates ? { stock: Number(updates.stock) } : {}),
       updatedAt: serverTimestamp()
     });
 

@@ -76,8 +76,6 @@ function ProgressBar({ duration, accent, paused }) {
   const [width, setWidth] = useState(100);
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
-  const remainingRef = useRef(duration);
-  const pauseStartRef = useRef(null);
 
   useEffect(() => {
     const tick = (timestamp) => {

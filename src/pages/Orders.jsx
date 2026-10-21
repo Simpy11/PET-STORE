@@ -1,3 +1,4 @@
+import DataError from '../components/common/DataError';
 import React, { useEffect, useState, useRef } from 'react';
 import { subscribeToOrders, updateOrder, addOrder } from '../services/orders';
 import { getProducts } from '../services/products';
@@ -27,6 +28,7 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,24 +44,29 @@ export default function Orders() {
   });
   const [submitting, setSubmitting] = useState(false);
   const isFirstLoad = useRef(true);
+  const orderCount = useRef(0);
+  const highlightTimer = useRef(null);
 
   useEffect(() => {
     fetchProducts();
     
     const unsubscribe = subscribeToOrders((updatedOrders) => {
-      if (!isFirstLoad.current && updatedOrders.length > orders.length) {
+      if (!isFirstLoad.current && updatedOrders.length > orderCount.current) {
         const latestOrder = updatedOrders[0];
         addToast(`New order received: ${latestOrder.orderId}`, 'success');
         setNewOrderHighlight(latestOrder.id);
-        setTimeout(() => setNewOrderHighlight(null), 5000);
+        clearTimeout(highlightTimer.current);
+        highlightTimer.current = setTimeout(() => setNewOrderHighlight(null), 5000);
       }
+      orderCount.current = updatedOrders.length;
+      setDataError('');
       setOrders(updatedOrders);
       setLoading(false);
       isFirstLoad.current = false;
-    });
+    }, () => { setDataError('Could not load orders.'); setLoading(false); });
 
-    return () => unsubscribe();
-  }, [orders.length]);
+    return () => { unsubscribe(); clearTimeout(highlightTimer.current); };
+  }, [addToast]);
 
   const fetchProducts = async () => {
     try {
@@ -67,6 +74,7 @@ export default function Orders() {
       setProducts(prodData);
     } catch (error) {
       console.error("Failed to fetch products", error);
+      setDataError("Could not load products for orders.");
     }
   };
 
@@ -74,7 +82,7 @@ export default function Orders() {
     try {
       await updateOrder(orderId, { status: newStatus });
       addToast(`Protocol updated: ${newStatus}`, 'success');
-    } catch (error) {
+    } catch {
       addToast("Status sync failed.", "error");
     }
   };
@@ -86,6 +94,7 @@ export default function Orders() {
       return;
     }
 
+    if (!Number.isInteger(newOrder.quantity) || newOrder.quantity < 1) { addToast('Quantity must be a positive whole number.', 'error'); return; }
     setSubmitting(true);
     try {
       const orderId = `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -94,7 +103,7 @@ export default function Orders() {
       addToast(`Order ${orderId} manifested successfully!`, 'success');
       setShowNewOrder(false);
       setNewOrder({ productId: '', productName: '', quantity: 1, customerName: '', customerEmail: '', status: 'Pending' });
-    } catch (error) {
+    } catch {
       addToast("Manifest creation failed.", "error");
     } finally {
       setSubmitting(false);
@@ -110,8 +119,9 @@ export default function Orders() {
     return matchesSearch && matchesStatus;
   });
 
-  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ITEMS_PER_PAGE));
+  const page = Math.min(currentPage, totalPages);
+  const startIndex = (page - 1) * ITEMS_PER_PAGE;
   const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   if (loading) {
@@ -125,6 +135,7 @@ export default function Orders() {
 
   return (
     <div className="space-y-10">
+      <DataError message={dataError} />
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
@@ -171,7 +182,7 @@ export default function Orders() {
               placeholder="Filter by Order ID, Product name, or Consignee..."
               className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all dark:text-white"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -283,15 +294,15 @@ export default function Orders() {
             </span>
             <div className="flex gap-4">
               <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
+                disabled={page === 1}
+                onClick={() => setCurrentPage(page - 1)}
                 className="p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-400 disabled:opacity-20 hover:text-brand-600 transition-all btn-hover shadow-sm"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
+                disabled={page === totalPages}
+                onClick={() => setCurrentPage(page + 1)}
                 className="p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-400 disabled:opacity-20 hover:text-brand-600 transition-all btn-hover shadow-sm"
               >
                 <ChevronRight className="h-5 w-5" />

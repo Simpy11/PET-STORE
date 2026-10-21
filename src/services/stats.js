@@ -4,7 +4,6 @@ import {
   where, 
   onSnapshot, 
   orderBy, 
-  limit,
   Timestamp
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -15,7 +14,7 @@ const ordersCollection = collection(db, "orders");
 /**
  * Subscribe to dashboard-wide stats
  */
-export const subscribeToDashboardStats = (callback) => {
+export const subscribeToDashboardStats = (callback, onError = console.error) => {
   const stats = {
     totalProducts: 0,
     itemsSoldToday: 0,
@@ -26,7 +25,6 @@ export const subscribeToDashboardStats = (callback) => {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayTimestamp = Timestamp.fromDate(today);
 
   // 1. Listen for product stats
   const unsubProducts = onSnapshot(productsCollection, (snapshot) => {
@@ -37,7 +35,7 @@ export const subscribeToDashboardStats = (callback) => {
       const data = doc.data();
       if (data.stock < 5) lowStock++;
       if ((data.demandCount || 0) > topProduct.demand) {
-        topProduct = { name: data.name || data.productName, demand: data.demandCount };
+        topProduct = { name: data.name || data.productName, demand: Number(data.demandCount) || 0 };
       }
     });
 
@@ -45,7 +43,7 @@ export const subscribeToDashboardStats = (callback) => {
     stats.lowStockCount = lowStock;
     stats.topSellingProduct = topProduct.name;
     callback({ ...stats });
-  });
+  }, onError);
 
   // 2. Listen for ALL orders and filter by today manually
   const qOrders = query(ordersCollection);
@@ -59,14 +57,14 @@ export const subscribeToDashboardStats = (callback) => {
       
       if (orderDate >= today) {
         ordersToday++;
-        totalItems += (data.quantity || data.qty || data.count || 1);
+        totalItems += Number(data.quantity || data.qty || data.count || 1) || 0;
       }
     });
     
     stats.itemsSoldToday = totalItems;
     stats.totalOrdersToday = ordersToday;
     callback({ ...stats });
-  });
+  }, onError);
 
   return () => {
     unsubProducts();
@@ -77,7 +75,7 @@ export const subscribeToDashboardStats = (callback) => {
 /**
  * Subscribe to hourly order data for Recharts
  */
-export const subscribeToHourlyOrders = (callback) => {
+export const subscribeToHourlyOrders = (callback, onError = console.error) => {
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const dayAgoTimestamp = Timestamp.fromDate(dayAgo);
 
@@ -104,5 +102,5 @@ export const subscribeToHourlyOrders = (callback) => {
     });
 
     callback(hourlyData);
-  });
+  }, onError);
 };

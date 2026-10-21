@@ -1,8 +1,8 @@
+import DataError from '../components/common/DataError';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProducts, deleteProduct, updateProduct } from '../services/products';
 import { Edit2, Trash2, Search, PackageOpen, Plus, Minus, ChevronLeft, ChevronRight, X, Save, AlertTriangle, RefreshCw, Layers } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/common/ToastProvider';
 import Modal from '../components/common/Modal';
 import AddProduct from './AddProduct';
@@ -33,11 +33,11 @@ const rowVariants = {
 const ITEMS_PER_PAGE = 8;
 
 export default function Inventory() {
-  const navigate = useNavigate();
   const { addToast } = useToast();
   const [confirmingDelete, setConfirmingDelete] = useState(null); // product id
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -51,10 +51,12 @@ export default function Inventory() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setDataError('');
       const data = await getProducts();
       setProducts(data);
     } catch (error) {
       console.error("Failed to load products", error);
+      setDataError("Could not load inventory.");
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export default function Inventory() {
   };
 
   const handleStockChange = async (id, currentStock, delta) => {
-    const newStock = Math.max(0, currentStock + delta);
+    const newStock = Math.max(0, Number(currentStock) + delta);
     try {
       await updateProduct(id, { stock: newStock });
       setProducts(products.map(p => p.id === id ? { ...p, stock: newStock } : p));
@@ -95,10 +97,10 @@ export default function Inventory() {
       await updateProduct(editingProduct.id, {
         productName: editingProduct.productName || editingProduct.name,
         category: editingProduct.category,
-        price: parseFloat(editingProduct.price),
-        stock: parseInt(editingProduct.stock, 10),
+        price: editingProduct.price,
+        stock: editingProduct.stock,
       });
-      setProducts(products.map(p => p.id === editingProduct.id ? editingProduct : p));
+      setProducts(products.map(p => p.id === editingProduct.id ? { ...editingProduct, name: editingProduct.productName, price: Number(editingProduct.price), stock: Number(editingProduct.stock) } : p));
       setIsEditModalOpen(false);
       addToast("Asset re-materialized successfully!", "success");
     } catch (error) {
@@ -112,8 +114,9 @@ export default function Inventory() {
     product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+  const page = Math.min(currentPage, totalPages);
+  const startIndex = (page - 1) * ITEMS_PER_PAGE;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   if (loading) {
@@ -160,6 +163,7 @@ export default function Inventory() {
 
   return (
     <div className="space-y-10">
+      <DataError message={dataError} />
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
@@ -200,7 +204,7 @@ export default function Inventory() {
             placeholder="Search products by name or category..."
             className="w-full pl-12 pr-4 py-3 bg-white/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all dark:text-white placeholder-slate-400"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           />
         </div>
         <div className="flex items-center gap-2 px-4 border-l border-slate-100 dark:border-slate-800">
@@ -253,7 +257,7 @@ export default function Inventory() {
                         product.stock < 5 ? 'bg-rose-500/[0.03]' : ''
                       } ${confirmingDelete === product.id ? 'bg-rose-500/10 dark:bg-rose-500/10' : ''}`}
                     >
-                      {/* ── Media ── */}
+                      {/* â”€â”€ Media â”€â”€ */}
                       <td className="px-8 py-5">
                         <div className="relative h-14 w-14 group-hover:scale-110 transition-transform duration-500">
                           <img
@@ -267,7 +271,7 @@ export default function Inventory() {
                         </div>
                       </td>
 
-                      {/* ── Designation ── */}
+                      {/* â”€â”€ Designation â”€â”€ */}
                       <td className="px-8 py-5">
                         <div className="flex flex-col gap-1">
                           <span className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{product.productName || product.name}</span>
@@ -275,19 +279,19 @@ export default function Inventory() {
                         </div>
                       </td>
 
-                      {/* ── Category ── */}
+                      {/* â”€â”€ Category â”€â”€ */}
                       <td className="px-8 py-5">
                         <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                           {product.category}
                         </span>
                       </td>
 
-                      {/* ── Price ── */}
+                      {/* â”€â”€ Price â”€â”€ */}
                       <td className="px-8 py-5 text-sm font-extrabold text-brand-600 dark:text-brand-400 text-right font-display">
-                        ₹{product.price ? product.price.toLocaleString() : '0.00'}
+                        â‚¹{product.price ? product.price.toLocaleString() : '0.00'}
                       </td>
 
-                      {/* ── Stock ── */}
+                      {/* â”€â”€ Stock â”€â”€ */}
                       <td className="px-8 py-5">
                         <div className="flex items-center justify-center gap-4">
                           <motion.button
@@ -315,7 +319,7 @@ export default function Inventory() {
                         </div>
                       </td>
 
-                      {/* ── Actions ── */}
+                      {/* â”€â”€ Actions â”€â”€ */}
                       <td className="px-8 py-5 text-right">
                         <AnimatePresence mode="wait" initial={false}>
                           {confirmingDelete === product.id ? (
@@ -391,19 +395,19 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
+                disabled={page === 1}
+                onClick={() => setCurrentPage(page - 1)}
                 className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 disabled:opacity-20 hover:text-brand-600 transition-all flex items-center gap-2 btn-hover shadow-sm"
               >
                 <ChevronLeft className="h-4 w-4" /> Prev
               </motion.button>
               <div className="flex items-center px-4 py-2 bg-slate-900 dark:bg-white rounded-2xl text-white dark:text-slate-900 text-[10px] font-bold font-mono">
-                {currentPage} / {totalPages}
+                {page} / {totalPages}
               </div>
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
+                disabled={page === totalPages}
+                onClick={() => setCurrentPage(page + 1)}
                 className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 disabled:opacity-20 hover:text-brand-600 transition-all flex items-center gap-2 btn-hover shadow-sm"
               >
                 Next <ChevronRight className="h-4 w-4" />
@@ -455,7 +459,7 @@ export default function Inventory() {
                 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Market Value (₹)</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Market Value (â‚¹)</label>
                     <input
                       type="number"
                       className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all dark:text-white"
